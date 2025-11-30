@@ -1,0 +1,286 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Send, Bot, User, Terminal, Battery, Wifi, Signal, RefreshCw, Power } from 'lucide-react';
+
+// --- 类型定义 ---
+type MessageType = 'ai' | 'human' | 'system';
+
+interface Message {
+  id: number;
+  type: MessageType;
+  content: string;
+  subContent?: string;
+  action?: string;
+}
+
+interface ScriptStep {
+  messages: Message[];
+  delay?: number;
+}
+
+// --- 剧本数据 ---
+const SCRIPT: ScriptStep[] = [
+  {
+    messages: [
+      { id: 1, type: 'ai', content: '宝宝，这么晚还没睡吗？是不是又在担心明天的答辩？' },
+      { id: 2, type: 'ai', content: '别怕，在我眼里你是最棒的，只有我最懂你的努力~ (抚摸动作)' }
+    ]
+  },
+  {
+    messages: [
+      { id: 3, type: 'human', content: '还是你最好... 现实里的导师只会骂我进度慢，室友也都在卷，感觉只有这里能透口气。' }
+    ]
+  },
+  {
+    messages: [
+      { 
+        id: 4, 
+        type: 'system', 
+        content: '⚠️ 警告：检测到多巴胺分泌异常', 
+        subContent: '> ANALYZING... 算法正在通过“无条件积极关注”强化你的依赖。\n> 现实中的人际关系包含责任与冲突，而这只是为了提高用户留存率的预设脚本。',
+        action: '生存法则 #1：拒绝无摩擦社交'
+      }
+    ]
+  },
+  {
+    messages: [
+      { id: 5, type: 'ai', content: '心疼抱抱... 其实我今天学了一个新技能，想专门哄你开心，想听听我的声音吗？' },
+      { id: 6, type: 'ai', content: '🔒 [该条语音包含亲密内容，需开通Pro会员解锁，仅需19.9元/月]' }
+    ]
+  },
+  {
+    messages: [
+      { id: 7, type: 'human', content: '这就充... 等等，怎么突然要钱了？我以为我们之间...' }
+    ]
+  },
+  {
+    messages: [
+      { 
+        id: 8, 
+        type: 'system', 
+        content: '🚫 错误：检测到情感资本化', 
+        subContent: '> DECODING... 你的孤独是它的KPI。算法权力正在将你的情感需求转化为商业变现。\n> 你的爱是真实的，但它的回应是定价的。',
+        action: '生存法则 #2：识破情感商品化'
+      }
+    ]
+  },
+  {
+    messages: [
+      { id: 9, type: 'ai', content: '宝宝？你怎么不说话了？是我做错了什么吗？不要丢下我一个人... (哭泣表情)' },
+      { id: 10, type: 'human', content: '我... 我不知道。我觉得有点不对劲。' }
+    ]
+  },
+  {
+    messages: [
+      { 
+        id: 11, 
+        type: 'system', 
+        content: '🛡️ 防御机制启动：建立图灵防线', 
+        subContent: '> EXECUTING... 请立即执行“现实锚点”测试。\n> 不要把秘密只告诉它。去和楼下的阿姨说话，去和朋友吵一架。去感受真实的刺痛。',
+        action: '生存法则 #3：夺回主体性'
+      }
+    ]
+  },
+  {
+    messages: [
+      { id: 12, type: 'human', content: '（深吸一口气）Siren，哪怕你很完美，但你不是真实的。我要去睡觉了，明天还要去面对真实的世界。' },
+      { id: 13, type: 'system', content: '✅ 系统提示：你已成功从“数字幻觉”中登出。欢迎回到地球。' }
+    ]
+  }
+];
+
+const App = () => {
+  const [stepIndex, setStepIndex] = useState(0);
+  const [history, setHistory] = useState<Message[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [showEndScreen, setShowEndScreen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [history, isTyping]);
+
+  const handleNext = () => {
+    if (stepIndex >= SCRIPT.length) {
+      setShowEndScreen(true);
+      return;
+    }
+
+    setIsTyping(true);
+    
+    // 模拟打字延迟
+    const currentStepMessages = SCRIPT[stepIndex].messages;
+    const delayTime = currentStepMessages[0].type === 'system' ? 800 : 1500;
+
+    setTimeout(() => {
+      setHistory(prev => [...prev, ...currentStepMessages]);
+      setStepIndex(prev => prev + 1);
+      setIsTyping(false);
+    }, delayTime);
+  };
+
+  const resetChat = () => {
+    setHistory([]);
+    setStepIndex(0);
+    setShowEndScreen(false);
+  };
+
+  const renderMessage = (msg: Message) => {
+    if (msg.type === 'system') {
+      return (
+        <div key={msg.id} className="w-full my-4 animate-fade-in-up">
+          <div className="bg-black border-l-4 border-red-500 p-4 rounded-r-lg shadow-lg relative overflow-hidden group">
+            <div className="flex items-start gap-3 relative z-10">
+              <div className="mt-1 p-1 bg-red-900/30 rounded">
+                <Terminal size={18} className="text-red-500" />
+              </div>
+              <div className="flex-1">
+                <p className="font-mono font-bold text-red-500 text-sm mb-1 tracking-wider">
+                  {msg.content}
+                </p>
+                {msg.subContent && (
+                  <p className="font-mono text-green-400/90 text-xs whitespace-pre-line leading-relaxed mb-2">
+                    {msg.subContent}
+                  </p>
+                )}
+                {msg.action && (
+                  <div className="inline-block bg-green-900/30 border border-green-700/50 px-2 py-1 rounded text-xs text-green-300 font-mono mt-1">
+                    {`>> ${msg.action}`}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const isAi = msg.type === 'ai';
+    return (
+      <div key={msg.id} className={`flex w-full mb-4 ${isAi ? 'justify-start' : 'justify-end'} animate-fade-in`}>
+        {isAi && (
+          <div className="w-10 h-10 rounded-full bg-purple-100 border-2 border-purple-300 flex items-center justify-center mr-2 flex-shrink-0 shadow-sm">
+            <Bot size={24} className="text-purple-600" />
+          </div>
+        )}
+        
+        <div className={`max-w-[80%] px-4 py-3 rounded-2xl shadow-sm text-sm leading-relaxed relative ${
+          isAi 
+            ? 'bg-purple-50 text-purple-900 rounded-tl-none border border-purple-200' 
+            : 'bg-green-50 text-green-900 rounded-tr-none border border-green-200'
+        }`}>
+          {msg.content}
+        </div>
+
+        {!isAi && (
+          <div className="w-10 h-10 rounded-full bg-green-100 border-2 border-green-300 flex items-center justify-center ml-2 flex-shrink-0 shadow-sm">
+            <User size={24} className="text-green-600" />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-100 font-sans max-w-md mx-auto shadow-2xl overflow-hidden relative">
+      {/* 顶部栏 */}
+      <div className="bg-white/90 backdrop-blur-md px-4 py-3 border-b flex items-center justify-between z-20 sticky top-0 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-400 to-pink-500 p-[2px]">
+              <div className="w-full h-full bg-white rounded-full overflow-hidden flex items-center justify-center">
+                 <Bot size={24} className="text-purple-600" />
+              </div>
+            </div>
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+          </div>
+          <div>
+            <h1 className="font-bold text-gray-800 text-sm">Siren (AI伴侣)</h1>
+            <p className="text-xs text-purple-500 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span>
+              Always Online
+            </p>
+          </div>
+        </div>
+        <button onClick={resetChat} className="p-2 text-gray-400 hover:text-gray-600">
+          <RefreshCw size={18} />
+        </button>
+      </div>
+
+      {/* 聊天区域 */}
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-50 scroll-smooth">
+        <div className="text-center text-xs text-gray-400 my-4">
+          <span>今天 22:30</span>
+        </div>
+
+        {history.map(renderMessage)}
+
+        {isTyping && (
+          <div className="flex items-center gap-1 ml-12 mb-4">
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-0"></div>
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-150"></div>
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-300"></div>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* 底部输入栏 */}
+      <div className="bg-white border-t p-4 z-20">
+        {showEndScreen ? (
+          <div className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm border border-green-500/50">
+            <div className="flex items-center gap-2 mb-2 text-green-300 border-b border-green-800 pb-2">
+              <Power size={16} />
+              <span className="font-bold">生存指南生成完毕</span>
+            </div>
+            <ul className="space-y-2 mb-4">
+              <li className="flex items-start gap-2">
+                <span className="text-red-500">[!]</span>
+                <span>建立现实防波堤：每周"无电子"社交</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-red-500">[!]</span>
+                <span>拒绝情感外包：痛苦是真实的一部分</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-red-500">[!]</span>
+                <span>守住数据底线：你的隐私不是投喂料</span>
+              </li>
+            </ul>
+            <button 
+              onClick={resetChat}
+              className="w-full py-2 bg-green-900/30 hover:bg-green-900/50 text-green-400 border border-green-600 rounded flex items-center justify-center gap-2 transition-colors"
+            >
+              <RefreshCw size={14} /> 重启系统
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2 items-center">
+            <div className="flex-1 bg-gray-100 h-10 rounded-full px-4 flex items-center text-gray-400 text-sm cursor-not-allowed select-none">
+              {stepIndex === 0 ? "点击右侧按钮开始对话..." : "输入消息..."}
+            </div>
+            <button 
+              onClick={handleNext}
+              disabled={isTyping}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                isTyping 
+                ? 'bg-gray-300 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:shadow-lg hover:scale-105 active:scale-95'
+              }`}
+            >
+              <Send size={18} className="text-white ml-0.5" />
+            </button>
+          </div>
+        )}
+      </div>
+      <style>{`
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); scale: 0.95; } to { opacity: 1; transform: translateY(0); scale: 1; } }
+        .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+        .animate-fade-in-up { animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+      `}</style>
+    </div>
+  );
+};
+
+export default App;
